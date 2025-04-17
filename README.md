@@ -8,7 +8,7 @@ Aplicación mobile desarrollada en **Kotlin** con **vistas clásicas (XML)** que
 - :scroll: Listado actualizado dinámicamente  
 - :page_facing_up: Pantalla de detalle  
 - :warning: Manejo de errores (UX + developer friendly)  
-- :brick: Arquitectura limpia con buenas prácticas
+- 🛠️: Arquitectura limpia con buenas prácticas
 
 ## :link: API utilizada:
 
