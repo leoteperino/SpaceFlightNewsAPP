@@ -2,14 +2,12 @@ package com.example.spaceflightnewsapp.ui.main
 
 import android.os.Bundle
 import android.view.View
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.spaceflightnewsapp.R
 import com.example.spaceflightnewsapp.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.collectLatest
@@ -20,6 +18,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
     private lateinit var articleAdapter: ArticleAdapter
+
+    private var isLoadingMore = false
+    private var currentOffset = 0
+    private val pageSize = 10
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +36,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         observeViewModel()
+        viewModel.fetchArticles(limit = pageSize, offset = currentOffset)
     }
 
     private fun setupRecyclerView() {
@@ -41,6 +44,22 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = articleAdapter
+
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+                    val totalItemCount = layoutManager.itemCount
+
+                    if (!isLoadingMore && lastVisibleItem >= totalItemCount - 3) {
+                        isLoadingMore = true
+                        currentOffset += pageSize
+                        viewModel.fetchArticles(limit = pageSize, offset = currentOffset)
+                    }
+                }
+            })
         }
     }
 
@@ -48,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.articles.collectLatest { articles ->
                 articleAdapter.submitList(articles)
+                isLoadingMore = false
             }
         }
 

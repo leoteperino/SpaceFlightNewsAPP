@@ -2,10 +2,12 @@ package com.example.spaceflightnewsapp.ui.main
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import coil.transform.RoundedCornersTransformation
 import com.example.spaceflightnewsapp.R
 import com.example.spaceflightnewsapp.data.model.Article
 import com.example.spaceflightnewsapp.databinding.ItemArticleBinding
@@ -33,8 +35,9 @@ class ArticleAdapter : ListAdapter<Article, ArticleAdapter.ArticleViewHolder>(Ar
             binding.tvSummary.text = article.summary ?: "Sin resumen"
 
             binding.imageView.load(article.image_url) {
-                placeholder(R.drawable.loading)
-                error(R.drawable.error)
+                placeholder(R.drawable.loading_small)
+                error(R.drawable.error_small)
+                transformations(RoundedCornersTransformation(16f))
             }
         }
     }

@@ -18,22 +18,19 @@ class MainViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    init {
-        fetchArticles()
-    }
-
-    private fun fetchArticles() {
+    fun fetchArticles(limit: Int = 10, offset: Int = 0) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val response = repository.getArticles()
+                val response = repository.getArticles(limit, offset)
                 if (response.isSuccessful) {
-                    _articles.value = response.body()?.results.orEmpty()
-                } else {
-                    _articles.value = emptyList()
+                    val newArticles = response.body()?.results.orEmpty()
+                    val currentList = _articles.value.toMutableList()
+                    currentList.addAll(newArticles)
+                    _articles.value = currentList
                 }
             } catch (e: Exception) {
-                _articles.value = emptyList()
+                // Log o manejo de error (futuro ErrorManager)
             } finally {
                 _isLoading.value = false
             }
