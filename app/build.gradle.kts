@@ -19,6 +19,7 @@ android {
 
     buildFeatures{
         buildConfig = true
+        viewBinding = true
     }
 
     buildTypes {
@@ -55,4 +56,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.retrofit)
     implementation(libs.gsonconverter)
+    implementation(libs.lifecycle.viewmodel.ktx)
 }
