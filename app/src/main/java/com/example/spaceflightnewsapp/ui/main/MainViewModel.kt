@@ -6,17 +6,39 @@ import com.example.spaceflightnewsapp.data.model.Article
 import com.example.spaceflightnewsapp.data.repository.ArticleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
 
     private val repository = ArticleRepository()
 
-    private val _articles = MutableStateFlow<List<Article>>(emptyList())
-    val articles: StateFlow<List<Article>> = _articles
+    private val _allArticles = MutableStateFlow<List<Article>>(emptyList())
+    private val _filteredArticles = MutableStateFlow<List<Article>>(emptyList())
+    val filteredArticles: StateFlow<List<Article>> = _filteredArticles
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val searchQuery = MutableStateFlow("")
+
+    init {
+        viewModelScope.launch {
+            combine(_allArticles, searchQuery) { articles, query ->
+                if (query.isBlank()) {
+                    articles
+                } else {
+                    articles.filter {
+                        it.title?.contains(query, ignoreCase = true) == true ||
+                                it.summary?.contains(query, ignoreCase = true) == true
+                    }
+                }
+            }.collectLatest { filtered ->
+                _filteredArticles.value = filtered
+            }
+        }
+    }
 
     fun fetchArticles(limit: Int = 10, offset: Int = 0) {
         viewModelScope.launch {
@@ -25,15 +47,23 @@ class MainViewModel : ViewModel() {
                 val response = repository.getArticles(limit, offset)
                 if (response.isSuccessful) {
                     val newArticles = response.body()?.results.orEmpty()
-                    val currentList = _articles.value.toMutableList()
+                    val currentList = _allArticles.value.toMutableList()
                     currentList.addAll(newArticles)
-                    _articles.value = currentList
+                    _allArticles.value = currentList
                 }
             } catch (e: Exception) {
-                // Log o manejo de error (futuro ErrorManager)
+                // Manejo de error futuro
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setSearchQuery(query: String) {
+        searchQuery.value = query
+    }
+
+    fun clearArticles() {
+        _allArticles.value = emptyList()
     }
 }

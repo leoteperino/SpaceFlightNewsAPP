@@ -5,6 +5,7 @@ import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,6 +37,9 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         observeViewModel()
+        setupSearch()
+        setupSwipeToRefresh()
+
         viewModel.fetchArticles(limit = pageSize, offset = currentOffset)
     }
 
@@ -65,9 +69,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeViewModel() {
         lifecycleScope.launch {
-            viewModel.articles.collectLatest { articles ->
+            viewModel.filteredArticles.collectLatest { articles ->
                 articleAdapter.submitList(articles)
+                binding.recyclerView.post {
+                    binding.recyclerView.scrollToPosition(0)
+                }
                 isLoadingMore = false
+                binding.emptyView.visibility = if (articles.isEmpty()) View.VISIBLE else View.GONE
             }
         }
 
@@ -75,6 +83,27 @@ class MainActivity : AppCompatActivity() {
             viewModel.isLoading.collectLatest { isLoading ->
                 binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
+        }
+    }
+
+    private fun setupSearch() {
+        binding.searchEditText.addTextChangedListener { text ->
+            viewModel.setSearchQuery(text.toString())
+        }
+        binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.searchEditText.text.isNullOrEmpty()) {
+                binding.searchEditText.setText("")
+                binding.searchEditText.clearFocus()
+            }
+        }
+    }
+
+    private fun setupSwipeToRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            currentOffset = 0
+            viewModel.clearArticles()
+            viewModel.fetchArticles(limit = pageSize, offset = currentOffset)
+            binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 }
