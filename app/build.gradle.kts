@@ -57,4 +57,5 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.gsonconverter)
     implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.coil)
 }

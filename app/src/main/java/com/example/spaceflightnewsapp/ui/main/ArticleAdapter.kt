@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import com.example.spaceflightnewsapp.R
 import com.example.spaceflightnewsapp.data.model.Article
 import com.example.spaceflightnewsapp.databinding.ItemArticleBinding
 
@@ -29,6 +31,11 @@ class ArticleAdapter : ListAdapter<Article, ArticleAdapter.ArticleViewHolder>(Ar
         fun bind(article: Article) {
             binding.tvTitle.text = article.title ?: "Sin título"
             binding.tvSummary.text = article.summary ?: "Sin resumen"
+
+            binding.imageView.load(article.image_url) {
+                placeholder(R.drawable.loading)
+                error(R.drawable.error)
+            }
         }
     }
 
