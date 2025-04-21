@@ -14,4 +14,7 @@
 
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
+    <color name="blue">#2196F3</color>
+    <color name="link_blue_strong">#0057B7</color>
+
 </resources>
