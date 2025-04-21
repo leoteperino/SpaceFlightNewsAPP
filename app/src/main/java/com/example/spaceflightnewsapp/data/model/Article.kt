@@ -1,5 +1,7 @@
 package com.example.spaceflightnewsapp.data.model
 
+import java.io.Serializable
+
 data class Article(
     val id: Int? = null,
     val title: String? = null,
@@ -13,4 +15,4 @@ data class Article(
     val featured: Boolean? = null,
     val launches: List<Launch>? = emptyList(),
     val events: List<Event>? = emptyList()
-)
+) : Serializable

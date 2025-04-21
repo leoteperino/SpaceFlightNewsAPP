@@ -1,16 +1,20 @@
 package com.example.spaceflightnewsapp.ui.main
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.spaceflightnewsapp.R
 import com.example.spaceflightnewsapp.databinding.ActivityMainBinding
+import com.example.spaceflightnewsapp.ui.detail.DetailActivity
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -19,6 +23,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
     private lateinit var articleAdapter: ArticleAdapter
+    private lateinit var concatAdapter: ConcatAdapter
+    private val loadingAdapter = LoadingAdapter()
 
     private var isLoadingMore = false
     private var currentOffset = 0
@@ -35,6 +41,11 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.title = getString(R.string.space_flight_news)
         binding.toolbar.setTitleTextColor(getColor(android.R.color.black))
 
+        binding.searchEditText.clearFocus()
+
+        binding.searchEditText.isEnabled = false
+        binding.searchEditText.isEnabled = true
+
         setupRecyclerView()
         observeViewModel()
         setupSearch()
@@ -44,10 +55,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        articleAdapter = ArticleAdapter()
+        articleAdapter = ArticleAdapter { article ->
+            val intent = Intent(this, DetailActivity::class.java)
+            intent.putExtra("article", article)
+            startActivity(intent)
+        }
+
+        concatAdapter = ConcatAdapter(articleAdapter)
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = articleAdapter
+            adapter = concatAdapter
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -71,17 +88,38 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.filteredArticles.collectLatest { articles ->
                 articleAdapter.submitList(articles)
-                binding.recyclerView.post {
-                    binding.recyclerView.scrollToPosition(0)
+
+                val currentQuery = binding.searchEditText.text.toString()
+
+                // ✅ Scroll solo si el usuario escribió una búsqueda
+                if (currentQuery.isNotBlank() && currentOffset == 0) {
+                    binding.recyclerView.post {
+                        binding.recyclerView.scrollToPosition(0)
+                    }
                 }
-                isLoadingMore = false
+
                 binding.emptyView.visibility = if (articles.isEmpty()) View.VISIBLE else View.GONE
             }
         }
 
         lifecycleScope.launch {
             viewModel.isLoading.collectLatest { isLoading ->
-                binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+                binding.progressBar.visibility = if (currentOffset == 0 && isLoading) View.VISIBLE else View.GONE
+
+                if (currentOffset > 0) {
+                    if (isLoading) {
+                        if (!concatAdapter.adapters.contains(loadingAdapter)) {
+                            concatAdapter.addAdapter(loadingAdapter)
+                        }
+                    } else {
+                        if (concatAdapter.adapters.contains(loadingAdapter)) {
+                            concatAdapter.removeAdapter(loadingAdapter)
+                        }
+                        isLoadingMore = false
+                    }
+                } else {
+                    isLoadingMore = false
+                }
             }
         }
     }
