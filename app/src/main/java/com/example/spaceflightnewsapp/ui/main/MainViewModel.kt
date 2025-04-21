@@ -12,6 +12,9 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
 
+    private val _showError = MutableStateFlow(false)
+    val showError: StateFlow<Boolean> = _showError
+
     private val repository = ArticleRepository()
 
     private val _allArticles = MutableStateFlow<List<Article>>(emptyList())
@@ -44,15 +47,15 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val response = repository.getArticles(limit, offset)
-                if (response.isSuccessful) {
-                    val newArticles = response.body()?.results.orEmpty()
-                    val currentList = _allArticles.value.toMutableList()
-                    currentList.addAll(newArticles)
-                    _allArticles.value = currentList
-                }
+                val data = repository.getArticles(limit, offset)
+                val newArticles = data.results.orEmpty()
+                val currentList = _allArticles.value.toMutableList()
+                currentList.addAll(newArticles)
+                _allArticles.value = currentList
+
+                _showError.value = false
             } catch (e: Exception) {
-                // Manejo de error futuro
+                _showError.value = true
             } finally {
                 _isLoading.value = false
             }

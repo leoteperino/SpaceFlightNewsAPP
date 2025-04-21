@@ -2,7 +2,6 @@ package com.example.spaceflightnewsapp.ui.main
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -42,9 +41,14 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setTitleTextColor(getColor(android.R.color.black))
 
         binding.searchEditText.clearFocus()
-
         binding.searchEditText.isEnabled = false
         binding.searchEditText.isEnabled = true
+
+        binding.btnRetry.setOnClickListener {
+            currentOffset = 0
+            viewModel.clearArticles()
+            viewModel.fetchArticles(limit = pageSize, offset = currentOffset)
+        }
 
         setupRecyclerView()
         observeViewModel()
@@ -90,15 +94,25 @@ class MainActivity : AppCompatActivity() {
                 articleAdapter.submitList(articles)
 
                 val currentQuery = binding.searchEditText.text.toString()
-
-                // ✅ Scroll solo si el usuario escribió una búsqueda
                 if (currentQuery.isNotBlank() && currentOffset == 0) {
                     binding.recyclerView.post {
                         binding.recyclerView.scrollToPosition(0)
                     }
                 }
 
-                binding.emptyView.visibility = if (articles.isEmpty()) View.VISIBLE else View.GONE
+                binding.emptyView.visibility = if (articles.isEmpty() && binding.errorLayout.visibility != View.VISIBLE) View.VISIBLE else View.GONE
+            }
+        }
+
+        lifecycleScope.launch {
+            viewModel.showError.collectLatest { showError ->
+                if (showError) {
+                    binding.errorLayout.visibility = View.VISIBLE
+                    binding.swipeRefreshLayout.visibility = View.GONE
+                } else {
+                    binding.errorLayout.visibility = View.GONE
+                    binding.swipeRefreshLayout.visibility = View.VISIBLE
+                }
             }
         }
 
